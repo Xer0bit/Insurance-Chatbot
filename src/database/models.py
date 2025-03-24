@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -10,6 +11,17 @@ class CompanyInfo(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     contact_info = Column(String(200))
+
+class ContactForm(Base):
+    __tablename__ = 'contact_forms'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(100), nullable=False)
+    phone = Column(String(20), nullable=False)
+    message = Column(Text)
+    submission_date = Column(DateTime, default=datetime.utcnow)
+    status = Column(String(20), default='new')
 
 class InsurancePolicy:
     def __init__(self, policy_id, policy_holder_name, insurance_type, start_date, end_date):

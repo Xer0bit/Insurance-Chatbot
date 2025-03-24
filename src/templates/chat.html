@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Insurance Chatbot</title>
+    <title>Bito By Bitlogicx</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h2>Insurance Assistant</h2>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="BITLogix Logo" class="header-logo">
+            <h2>Bito Assistant</h2>
         </div>
         <div class="chat-messages" id="chat-messages">
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </div>
         <div class="chat-input">
             <input type="text" id="user-input" placeholder="Type your message...">

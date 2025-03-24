@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .models import Base, CompanyInfo
+from .models import Base, CompanyInfo, ContactForm
 from config.settings import DATABASE_URI
+from datetime import datetime
 
 class DatabaseHandler:
     def __init__(self):
@@ -19,6 +20,25 @@ class DatabaseHandler:
                 'contact_info': company.contact_info
             }
         return {'error': 'Company information not found'}
+
+    def save_contact_form(self, contact_data):
+        try:
+            contact_form = ContactForm(
+                name=contact_data['name'],
+                email=contact_data['email'],
+                phone=contact_data['phone'],
+                message=contact_data['message'],
+                submission_date=datetime.utcnow()
+            )
+            self.session.add(contact_form)
+            self.session.commit()
+            return True, "Contact information saved successfully"
+        except Exception as e:
+            self.session.rollback()
+            return False, str(e)
+
+    def get_contact_forms(self, status='new'):
+        return self.session.query(ContactForm).filter_by(status=status).all()
 
 def connect_to_db():
     import sqlite3

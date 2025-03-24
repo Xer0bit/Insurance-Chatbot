@@ -1,0 +1,179 @@
+{
+    "company": {
+        "name": "BITLogix",
+        "website": "https://bitlogicx.com/",
+        "location": "A5 Commercial Block A, Architects Engineers Housing Society, Lahore, Pakistan",
+        "contact_email": "contact@bitlogicx.com",
+        "description": "BITLogix is a dedicated team of professionals delivering exceptional software services and innovative solutions to drive business success.",
+        "social_media": ["Facebook", "Twitter", "LinkedIn", "Instagram"],
+        "sections": [
+            "Home", "Services", "Products", "Projects", "About Us", 
+            "Blogs", "Team", "Contact Us", "Career", "Hire A Professional"
+        ],
+        "offerings": {
+            "free_consultation": true,
+            "career_opportunities": true
+        }
+    },
+    "products": [
+        {
+            "name": "BIT ERP",
+            "description": "Empowers businesses to manage employee data and streamline processes with Slack integration for enhanced communication.",
+            "use_case": "Business management and team collaboration"
+        },
+        {
+            "name": "Project Management System",
+            "description": "Intuitive system for planning, managing, and monitoring projects efficiently.",
+            "use_case": "Team project coordination"
+        },
+        {
+            "name": "College/School Management System",
+            "description": "Centralizes educational administration tasks, stakeholder communication, and student management.",
+            "use_case": "Academic institutions"
+        },
+        {
+            "name": "Learning Management System",
+            "description": "User-friendly platform for online course delivery with flexibility and accessibility.",
+            "use_case": "E-learning and education"
+        },
+        {
+            "name": "Online Tourism Platform",
+            "description": "Offers seamless booking, tailor-made itineraries, and personalized travel recommendations.",
+            "use_case": "Travel and tourism"
+        },
+        {
+            "name": "Inventory Management System",
+            "description": "All-in-one application integrating inventory, purchases, sales, and warehouse management.",
+            "use_case": "Retail and logistics"
+        },
+        {
+            "name": "Online Car Selling System",
+            "description": "Intuitive system for listing, marketing, and selling cars online securely.",
+            "use_case": "Automotive sales"
+        },
+        {
+            "name": "Food/Grocery Delivery Application",
+            "description": "Allows browsing, ordering, and doorstep delivery from restaurants and stores.",
+            "use_case": "Food and grocery services"
+        },
+        {
+            "name": "Restaurant POS",
+            "description": "Manages orders, tableside service, and provides real-time analytics for restaurants.",
+            "use_case": "Hospitality"
+        },
+        {
+            "name": "Point of Sale System",
+            "description": "Manages products, sales, purchases, and transactions with a seamless checkout experience.",
+            "use_case": "Retail businesses"
+        },
+        {
+            "name": "Car Renting App System",
+            "description": "Offers seamless booking, flexible options, and reliable vehicle selection for renting.",
+            "use_case": "Car rental services"
+        },
+        {
+            "name": "eCommerce Marketplace",
+            "description": "Connects buyers and sellers with a diverse range of products and reliable support.",
+            "use_case": "Online shopping"
+        },
+        {
+            "name": "Vehicle Management System",
+            "description": "Comprehensive solution for fleet management, tracking, and maintenance.",
+            "use_case": "Transportation and logistics"
+        },
+        {
+            "name": "Car and Bike Parking Solutions",
+            "description": "Automates parking space allocation, vehicle tracking, and payment processing.",
+            "use_case": "Parking management"
+        },
+        {
+            "name": "HR and Payroll Management",
+            "description": "Automates HR processes, payroll calculations, and employee management tasks.",
+            "use_case": "Human resources and payroll"
+        }
+    ],
+    "services": {
+        "general": "Custom software development and transformative business solutions",
+        "specific": [
+            "Software development",
+            "System integration",
+            "Business process automation",
+            "Consultation services"
+        ]
+    },
+    "custom_solutions": {
+        "description": "We deliver tailor-made software solutions designed to address your unique business challenges",
+        "development_process": [
+            "Requirements Analysis",
+            "Design and Architecture",
+            "Development",
+            "Testing and QA",
+            "Deployment",
+            "Maintenance and Support"
+        ],
+        "technologies": {
+            "frontend": [
+                "React",
+                "Angular",
+                "Vue.js",
+                "Next.js",
+                "React Native"
+            ],
+            "backend": [
+                "Node.js",
+                "Python",
+                "Java",
+                "PHP",
+                ".NET"
+            ],
+            "database": [
+                "MySQL",
+                "PostgreSQL",
+                "MongoDB",
+                "SQL Server",
+                "Oracle"
+            ],
+            "cloud": [
+                "AWS",
+                "Azure",
+                "Google Cloud",
+                "Digital Ocean"
+            ]
+        },
+        "industries_served": [
+            "Healthcare",
+            "Education",
+            "E-commerce",
+            "Finance",
+            "Manufacturing",
+            "Logistics",
+            "Real Estate",
+            "Travel & Tourism"
+        ],
+        "engagement_models": [
+            {
+                "name": "Time and Material",
+                "description": "Flexible engagement model for projects with evolving requirements"
+            },
+            {
+                "name": "Fixed Price",
+                "description": "Predetermined cost and timeline for well-defined project scope"
+            },
+            {
+                "name": "Dedicated Team",
+                "description": "Dedicated resources working exclusively on your project"
+            }
+        ]
+    },
+    "response_templates": {
+        "greeting": "Hi! I'm Bito, how can I help you today?",
+        "company_intro": "We're BITLogix, a software company in Lahore creating innovative solutions for business success.",
+        "contact": "You can email us at {contact_email} or visit us at {location}.",
+        "product_info": "{product_name}: {description}",
+        "response_styles": {
+            "brief": "Here's what you need to know: {key_points}",
+            "detailed": "Let me explain about {topic}: {explanation}",
+            "technical": "Technical details: {specs}"
+        }
+    }
+}
