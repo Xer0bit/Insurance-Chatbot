@@ -36,7 +36,7 @@ insurance-chatbot
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/Xer0bit/Insurance-Chatbot/
    cd insurance-chatbot
    ```
 
