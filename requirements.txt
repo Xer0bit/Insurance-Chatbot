@@ -1,0 +1,6 @@
+Flask
+langchain
+ollama
+python-dotenv
+SQLAlchemy
+Jinja2
