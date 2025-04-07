@@ -41,27 +41,35 @@ class DatabaseHandler:
                 raise
 
     async def save_contact_form(self, contact_data):
-        async with self.async_session() as session:
-            try:
+        """Save contact form data using SQLAlchemy models"""
+        try:
+            logger.debug(f"Attempting to save contact form: {contact_data}")
+            
+            async with self.async_session() as session:
+                # Create new contact form instance
                 contact_form = ContactForm(
                     name=contact_data['name'],
                     email=contact_data['email'],
                     phone=contact_data['phone'],
                     message=contact_data.get('message', ''),
+                    session_id=contact_data.get('session_id'),
                     submission_date=datetime.utcnow(),
                     status='new'
                 )
                 
                 session.add(contact_form)
-                await session.commit()
+                try:
+                    await session.commit()
+                    logger.info(f"Successfully saved contact form for {contact_data['email']}")
+                    return True, "Contact form saved successfully"
+                except Exception as e:
+                    await session.rollback()
+                    logger.error(f"Database error while committing: {str(e)}")
+                    return False, f"Failed to save contact form: {str(e)}"
                 
-                logger.info(f"Contact form saved for {contact_data['email']}")
-                return True, "Contact information saved successfully"
-                
-            except Exception as e:
-                await session.rollback()
-                logger.error(f"Error saving contact form: {str(e)}")
-                return False, str(e)
+        except Exception as e:
+            logger.error(f"Error in save_contact_form: {str(e)}")
+            return False, f"Error processing contact form: {str(e)}"
 
     async def get_contact_forms(self, status=None):
         """Get all contact forms with optional status filter"""

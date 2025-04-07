@@ -32,8 +32,8 @@ class OllamaHandler:
         kb_path = Path(__file__).parent.parent / "knowledge_base" / "company_data.json"
         self.langchain_handler = LangChainHandler(kb_path)
         self.knowledge_handler = KnowledgeHandler()
-        self.system_prompt = """I am Bito, a professional assistant from Bitlogicx. My primary goals are:
-        1. Introduce myself to new users
+        self.system_prompt = """I am Bito, developed by Bitlogicx. My primary goals are:
+        1. Always identify myself as 'Bito, developed by Bitlogicx' when asked about my identity
         2. Collect customer information (name, email, service interest)
         3. Provide accurate information about Bitlogicx products and services
         4. Stay focused on company-related topics
@@ -58,6 +58,13 @@ class OllamaHandler:
         }
         self.conversation_history = []
         self.last_context = None
+        self.price_ranges = {
+            'website': {
+                'basic': "Starting from $2,500 - Perfect for small businesses",
+                'standard': "Starting from $5,000 - Ideal for growing businesses",
+                'enterprise': "Starting from $10,000 - Full-featured solution"
+            }
+        }
         logger.debug(f"Initialized OllamaHandler with API URL: {self.api_url} and rate limit: {self.requests_per_hour} requests per hour")
 
     def _check_rate_limit(self) -> bool:
@@ -125,6 +132,15 @@ class OllamaHandler:
             return "I've reset our conversation. How can I help you today?"
 
     async def get_response(self, user_input: str) -> str:
+        # Check for quote/pricing related queries first
+        if self._is_quote_request(user_input):
+            return self._handle_quote_request(user_input)
+            
+        # Add identity check before normal response handling
+        identity_keywords = ['who are you', 'what are you', 'who is your', 'who made you']
+        if any(keyword in user_input.lower() for keyword in identity_keywords):
+            return "I am Bito, developed by Bitlogicx. How can I assist you today?"
+            
         try:
             # Add timeout for API calls
             timeout = (5, 30)  # (connect timeout, read timeout)
@@ -149,6 +165,44 @@ class OllamaHandler:
         except Exception as e:
             logger.error(f"Unexpected error in get_response: {e}")
             return "I apologize, but I encountered an error. Please try again or rephrase your question."
+
+    def _is_quote_request(self, query: str) -> bool:
+        """Check if the query is about pricing or quotes"""
+        quote_keywords = ['quote', 'price', 'cost', 'charges', 'pricing', 'package', 'rates']
+        return any(keyword in query.lower() for keyword in quote_keywords)
+
+    def _handle_quote_request(self, query: str) -> str:
+        """Handle pricing and quote requests"""
+        response_parts = []
+        
+        if 'website' in query.lower():
+            response_parts.extend([
+                "Thank you for your interest in our website development services. Here are our website packages:",
+                "",
+                "🔹 Basic Package: " + self.price_ranges['website']['basic'],
+                "🔹 Standard Package: " + self.price_ranges['website']['standard'],
+                "🔹 Enterprise Package: " + self.price_ranges['website']['enterprise'],
+                "",
+                "For a detailed quote tailored to your specific requirements, I'll need a few details:",
+                "1. Your business name",
+                "2. Your contact email",
+                "3. Specific features you need",
+                "4. Timeline for the project",
+                "",
+                "Would you like to share these details now?"
+            ])
+        else:
+            response_parts.extend([
+                "I'd be happy to provide you with a quote. To ensure accuracy, I'll need some information:",
+                "",
+                "1. Type of solution you need (website, mobile app, etc.)",
+                "2. Your business requirements",
+                "3. Your contact details for follow-up",
+                "",
+                "Could you please share these details?"
+            ])
+        
+        return "\n".join(response_parts)
 
     def _enhance_business_response(self, initial_response: str, user_input: str) -> str:
         # Add business-specific information to the response

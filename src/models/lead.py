@@ -9,3 +9,4 @@ class Lead(db.Model):
     message = db.Column(db.Text)
     status = db.Column(db.String(20), default='New')
     submission_date = db.Column(db.DateTime, default=datetime.utcnow)
+    session_id = db.Column(db.String(36), nullable=True)  # Add session_id field

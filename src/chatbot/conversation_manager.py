@@ -47,3 +47,38 @@ class ConversationManager:
             WHERE c.user_id = ?
             GROUP BY c.session_id
         """, (user_id,))
+    
+    def handle_requirements(self, session_id: str, user_message: str) -> str:
+        """Handle requirements gathering and provide appropriate response"""
+        # Store requirement
+        self.add_requirement(session_id, user_message)
+        
+        # Generate response
+        response = "Thank you for sharing your requirements. We're noting everything down. "
+        response += "Please feel free to share any additional details or requirements.\n\n"
+        
+        if self._should_suggest_meeting(session_id):
+            response += "Would you like to schedule a meeting with one of our representatives "
+            response += "to discuss your requirements in more detail?"
+        
+        return response
+    
+    def add_requirement(self, session_id: str, requirement: str):
+        """Store user requirements"""
+        self.db.execute("""
+            INSERT INTO requirements (session_id, requirement, timestamp)
+            VALUES (?, ?, ?)
+        """, (session_id, requirement, datetime.now()))
+    
+    def _should_suggest_meeting(self, session_id: str) -> bool:
+        """Check if we should suggest a meeting based on conversation context"""
+        message_count = self.db.fetch_one("""
+            SELECT COUNT(*) FROM messages WHERE session_id = ?
+        """, (session_id,))[0]
+        
+        requirements_count = self.db.fetch_one("""
+            SELECT COUNT(*) FROM requirements WHERE session_id = ?
+        """, (session_id,))[0]
+        
+        # Suggest meeting after certain interaction threshold
+        return message_count >= 3 and requirements_count >= 2

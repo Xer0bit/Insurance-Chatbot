@@ -90,10 +90,12 @@ async def info():
 async def submit_contact():
     try:
         contact_data = await request.get_json()
+        logger.debug(f"Received contact form data: {contact_data}")
         
         # Validate required fields
         required_fields = ['name', 'email', 'phone']
         if not all(field in contact_data for field in required_fields):
+            logger.error(f"Missing required fields in contact form: {contact_data}")
             return jsonify({
                 'status': 'error',
                 'message': 'Missing required fields'
@@ -103,15 +105,22 @@ async def submit_contact():
         if 'message' not in contact_data:
             contact_data['message'] = ''
             
+        # Add session ID from current session
+        session_id = session.get('chat_session_id')
+        contact_data['session_id'] = session_id
+        logger.debug(f"Adding session_id to contact form: {session_id}")
+            
         # Save to database using the database handler
         success, message = await db_handler.save_contact_form(contact_data)
         
         if success:
+            logger.info(f"Successfully saved contact form for {contact_data['email']}")
             return jsonify({
                 'status': 'success',
                 'message': 'Thank you! Your contact information has been saved.'
             })
         else:
+            logger.error(f"Failed to save contact form: {message}")
             return jsonify({
                 'status': 'error',
                 'message': f'Failed to save contact information: {message}'
@@ -137,4 +146,4 @@ async def reset_chat():
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

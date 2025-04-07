@@ -23,6 +23,7 @@ class ContactForm(Base):
     message = Column(Text)
     submission_date = Column(DateTime, default=datetime.utcnow)
     status = Column(String(20), default='new')
+    session_id = Column(String(36), nullable=True)  # Add this line
 
 class ChatSession(Base):
     __tablename__ = 'chat_sessions'

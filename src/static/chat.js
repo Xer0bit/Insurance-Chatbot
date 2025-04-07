@@ -131,7 +131,8 @@ function handleContactFormSubmission(event) {
         name: form.querySelector('#name').value,
         email: form.querySelector('#email').value,
         phone: form.querySelector('#phone').value,
-        message: form.querySelector('#message').value
+        message: form.querySelector('#message').value,
+        session_id: sessionStorage.getItem('chat_session_id') // Add session ID from storage
     };
 
     fetch('/submit-contact', {
