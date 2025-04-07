@@ -2,7 +2,6 @@ from quart import Quart, request, jsonify, render_template, session
 from chatbot.ollama_handler import OllamaHandler
 from database.db_handler import DatabaseHandler
 from config.settings import DATABASE_URI, Config
-from admin.routes import admin
 import logging
 import os
 
@@ -13,10 +12,14 @@ logging.basicConfig(level=logging.DEBUG)
 app = Quart(__name__)
 app.config.from_object(Config)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
-app.register_blueprint(admin)
 
 ollama_handler = OllamaHandler()
 db_handler = DatabaseHandler()
+
+@app.before_serving
+async def initialize_database():
+    await db_handler.initialize()
+    logger.info("Database initialized for the application")
 
 @app.route('/')
 async def home():
@@ -28,6 +31,19 @@ async def chat():
         data = await request.get_json()
         user_input = data.get('message', '').strip()
         
+        # Ensure user has a session
+        if 'chat_session_id' not in session:
+            session['chat_session_id'] = await db_handler.create_chat_session(
+                session.get('user_id', 'anonymous')
+            )
+
+        # Save user message
+        await db_handler.save_chat_message(
+            session['chat_session_id'], 
+            'user', 
+            user_input
+        )
+
         # Handle initial connection
         if user_input == "START_CHAT":
             return jsonify({
@@ -38,6 +54,13 @@ async def chat():
             return jsonify({'error': 'No message provided'}), 400
 
         response = await ollama_handler.get_response(user_input)
+        
+        # Save bot response
+        await db_handler.save_chat_message(
+            session['chat_session_id'], 
+            'bot', 
+            response
+        )
         
         # Check if lead was collected
         if 'Thank you for providing your information!' in response:
@@ -114,4 +137,4 @@ async def reset_chat():
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)

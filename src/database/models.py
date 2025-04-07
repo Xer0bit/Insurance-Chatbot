@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+import uuid
 
 Base = declarative_base()
 
@@ -22,6 +23,22 @@ class ContactForm(Base):
     message = Column(Text)
     submission_date = Column(DateTime, default=datetime.utcnow)
     status = Column(String(20), default='new')
+
+class ChatSession(Base):
+    __tablename__ = 'chat_sessions'
+    
+    session_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(100), nullable=False)
+    start_time = Column(DateTime, nullable=False)
+
+class ChatMessage(Base):
+    __tablename__ = 'chat_messages'
+    
+    id = Column(Integer, primary_key=True)
+    session_id = Column(String(36), ForeignKey('chat_sessions.session_id'), nullable=False)
+    sender = Column(String(50), nullable=False)  # 'user' or 'bot'
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
 
 class InsurancePolicy:
     def __init__(self, policy_id, policy_holder_name, insurance_type, start_date, end_date):

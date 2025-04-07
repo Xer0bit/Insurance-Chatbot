@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 import logging
 from typing import Dict, List, Optional
+from datetime import datetime
+from .conversation_manager import ConversationManager
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,11 @@ class KnowledgeHandler:
             "phone": None,
             "project_type": None
         }
+        self.previous_context = None
+        self.context_keywords = set()
+        self.unclear_responses = ['?', 'what', 'huh', 'what?', 'huh?']
+        self.conversation_manager = ConversationManager()
+        self.current_session_id = None
 
     def _load_knowledge_base(self):
         try:
@@ -28,11 +35,63 @@ class KnowledgeHandler:
             logger.error(f"Error loading knowledge base: {e}")
             return {}
 
-    def get_context(self, query: str) -> str:
-        """Enhanced context matching with sales focus"""
+    def start_new_session(self, user_id: str):
+        """Start new conversation session"""
+        self.current_session_id = self.conversation_manager.create_session(user_id)
+
+    def get_context(self, query: str, user_id: str = None) -> str:
+        """Enhanced context matching with conversation tracking"""
+        if not self.current_session_id and user_id:
+            self.start_new_session(user_id)
+            
+        # Track the conversation
+        self.conversation_manager.add_message(
+            self.current_session_id,
+            "user",
+            query
+        )
+        
+        response = self._generate_response(query)
+        
+        # Track bot response
+        self.conversation_manager.add_message(
+            self.current_session_id,
+            "bot",
+            response
+        )
+        
+        return response
+
+    def _generate_response(self, query: str) -> str:
+        """Generate response (moved from get_context)"""
+        # Handle unclear queries
+        if query.strip() in self.unclear_responses:
+            if self.previous_context:
+                return ("I notice you might be confused. Let me clarify: "
+                       "I'm here to help you with software development needs. "
+                       "Could you please provide more details about what you're looking for?")
+            return ("I'm here to help you with software development services. "
+                   "Could you please let me know what kind of solution you're looking for? "
+                   "For example, a mobile app, website, or business software?")
+
+        # Handle completely irrelevant queries
+        if not self._is_relevant_to_previous_context(query):
+            if any(word in query.lower() for word in ['food', 'burger', 'pizza', 'restaurant']):
+                return ("I apologize, but I can only assist with software development related queries. "
+                       "I cannot help with food orders or restaurant recommendations. "
+                       "Would you like to discuss your software development needs instead?")
+            return ("I apologize, but I can only assist with software development related topics. "
+                   "Could you please ask a question about our software services?")
+
         # First check if we're collecting lead information
         if self.lead_collection_state["collecting"]:
             return self._handle_lead_collection(query)
+
+        # Check if query is irrelevant to previous context
+        if not self._is_relevant_to_previous_context(query):
+            return ("I apologize, but that seems unrelated to our previous discussion. "
+                   "Could you please clarify how it relates to what we were discussing? "
+                   "Or would you like to start a new topic about our services?")
 
         # First check if it's an initial greeting
         greeting_words = ['hi', 'hello', 'hey', 'greetings']
@@ -80,7 +139,9 @@ Would you like to discuss your specific requirements?"""
 
 Please start by telling me your name."""
 
-        return self._get_general_context(query)
+        context = self._get_general_context(query)
+        self._update_context_keywords(context)
+        return context
 
     def _get_general_context(self, query: str) -> str:
         """Get general context for basic queries"""
@@ -243,3 +304,25 @@ In the meantime, would you like to know more about our development process or pr
         import re
         pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         return bool(re.match(pattern, email))
+
+    def _is_relevant_to_previous_context(self, query: str) -> bool:
+        """Check if the current query is relevant to previous context"""
+        if not self.previous_context or not self.context_keywords:
+            return True
+        
+        query_words = set(query.lower().split())
+        return bool(query_words & self.context_keywords)
+
+    def _update_context_keywords(self, context: str):
+        """Update context keywords for relevancy checking"""
+        # Important keywords that indicate context
+        important_words = ['development', 'integration', 'automation', 'consulting', 
+                         'ai', 'chatbot', 'website', 'app', 'mobile', 'service']
+        self.context_keywords = set(word for word in context.lower().split() 
+                                  if word in important_words)
+        self.previous_context = context
+
+    def summarize_conversation(self, session_id: Optional[str] = None) -> str:
+        """Get conversation summary"""
+        sid = session_id or self.current_session_id
+        return self.conversation_manager.get_summary(sid)
