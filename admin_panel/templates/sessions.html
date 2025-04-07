@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Sessions</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Admin Panel</a>
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="nav-item nav-link" href="{{ url_for('view_sessions') }}">Sessions</a>
+            <a class="nav-item nav-link" href="{{ url_for('view_contacts') }}">Contact Forms</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Chat Sessions</h2>
+        <div class="row mt-4">
+            {% for session in sessions %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Session: {{ session['session_id'] }}</h5>
+                        <p class="card-text">
+                            Messages: {{ session['message_count'] }}<br>
+                            Started: {{ session['start_time'] }}<br>
+                            Ended: {{ session['end_time'] }}
+                        </p>
+                        <a href="{{ url_for('session_detail', session_id=session['session_id']) }}" 
+                           class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

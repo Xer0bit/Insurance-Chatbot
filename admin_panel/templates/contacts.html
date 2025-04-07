@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bito Admin - Contact Forms</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { background: #f4f6f9; }
+        .navbar-bito {
+            background: #1a1a2e;
+            padding: 15px 0;
+        }
+        .navbar-brand { 
+            color: #4CAF50 !important; 
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .contact-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            margin-bottom: 20px;
+        }
+        .contact-card:hover {
+            transform: translateY(-5px);
+        }
+        .message-content {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .contact-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .contact-header {
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-bito">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-robot"></i> BITO</a>
+            <div class="navbar-nav ml-auto">
+                <a class="nav-item nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a class="nav-item nav-link" href="{{ url_for('view_sessions') }}">
+                    <i class="fas fa-comments"></i> Sessions
+                </a>
+                <a class="nav-item nav-link active" href="{{ url_for('view_contacts') }}">
+                    <i class="fas fa-envelope"></i> Contacts
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="contact-header d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-envelope-open-text"></i> Contact Form Submissions</h2>
+            <a href="{{ url_for('export_data') }}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Export All Data
+            </a>
+        </div>
+        
+        <div class="row">
+            {% for contact in contacts %}
+            <div class="col-md-6">
+                <div class="card contact-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ contact['name'] }}</h5>
+                            <span class="badge badge-primary">New</span>
+                        </div>
+                        <div class="contact-info mt-2">
+                            <p class="mb-1">
+                                <i class="fas fa-envelope"></i> {{ contact['email'] }}
+                            </p>
+                            <p class="mb-1">
+                                <i class="fas fa-phone"></i> {{ contact['phone'] }}
+                            </p>
+                            <p class="mb-1">
+                                <i class="fas fa-clock"></i> {{ contact['submission_date'] }}
+                            </p>
+                        </div>
+                        <div class="message-content">
+                            <p class="mb-0">{{ contact['message'] }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

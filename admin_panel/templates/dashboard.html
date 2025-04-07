@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bito Admin - Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { background: #f4f6f9; }
+        .navbar-bito {
+            background: #1a1a2e;
+            padding: 15px 0;
+        }
+        .navbar-brand { 
+            color: #4CAF50 !important; 
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .stat-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-icon {
+            font-size: 3em;
+            opacity: 0.15;
+            position: absolute;
+            right: 20px;
+            bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-bito">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-robot"></i> BITO</a>
+            <div class="navbar-nav ml-auto">
+                <a class="nav-item nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a class="nav-item nav-link" href="{{ url_for('view_sessions') }}">
+                    <i class="fas fa-comments"></i> Sessions
+                </a>
+                <a class="nav-item nav-link" href="{{ url_for('view_contacts') }}">
+                    <i class="fas fa-envelope"></i> Contacts
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row align-items-center mb-4">
+            <div class="col">
+                <h2>Dashboard Overview</h2>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('export_data') }}" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Export All Data
+                </a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card stat-card bg-primary text-white">
+                    <div class="card-body">
+                        <h6 class="text-uppercase mb-3">Total Messages</h6>
+                        <h2 class="display-4">{{ total_messages }}</h2>
+                        <i class="fas fa-comments stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card stat-card bg-success text-white">
+                    <div class="card-body">
+                        <h6 class="text-uppercase mb-3">Active Sessions</h6>
+                        <h2 class="display-4">{{ total_sessions }}</h2>
+                        <i class="fas fa-users stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card stat-card bg-info text-white">
+                    <div class="card-body">
+                        <h6 class="text-uppercase mb-3">Contact Forms</h6>
+                        <h2 class="display-4">{{ total_contacts }}</h2>
+                        <i class="fas fa-envelope stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card stat-card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Session ID</th>
+                                        <th>Last Message</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in recent_sessions %}
+                                    <tr>
+                                        <td>{{ session.session_id }}</td>
+                                        <td>{{ session.last_message }}</td>
+                                        <td>
+                                            <span class="badge badge-success">Active</span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('session_detail', session_id=session.session_id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

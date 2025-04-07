@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat History</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Admin Panel</a>
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="nav-item nav-link" href="{{ url_for('view_chats') }}">View Chats</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Chat History</h2>
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Session ID</th>
+                    <th>Sender</th>
+                    <th>Content</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chat in chats %}
+                <tr>
+                    <td>{{ chat['id'] }}</td>
+                    <td>{{ chat['session_id'] }}</td>
+                    <td>{{ chat['sender'] }}</td>
+                    <td>{{ chat['content'] }}</td>
+                    <td>{{ chat['timestamp'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bito Admin - Chat Session</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { background: #f4f6f9; }
+        .navbar-bito {
+            background: #1a1a2e;
+            padding: 15px 0;
+        }
+        .navbar-brand { 
+            color: #4CAF50 !important; 
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+        .message-content {
+            padding: 15px;
+            border-radius: 15px;
+            position: relative;
+        }
+        .user .message-content {
+            background: #e3f2fd;
+            margin-right: 20px;
+        }
+        .bot .message-content {
+            background: #f5f5f5;
+            margin-left: 20px;
+        }
+        .message-time {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .user {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .bot {
+            display: flex;
+            justify-content: flex-start;
+        }
+        .session-header {
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .user .avatar {
+            background: #2196F3;
+            margin-left: 10px;
+        }
+        .bot .avatar {
+            background: #4CAF50;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-bito">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-robot"></i> BITO</a>
+            <div class="navbar-nav ml-auto">
+                <a class="nav-item nav-link" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a class="nav-item nav-link active" href="{{ url_for('view_sessions') }}">
+                    <i class="fas fa-comments"></i> Sessions
+                </a>
+                <a class="nav-item nav-link" href="{{ url_for('view_contacts') }}">
+                    <i class="fas fa-envelope"></i> Contacts
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="session-header">
+            <h2><i class="fas fa-comments"></i> Chat Session: {{ session_id }}</h2>
+        </div>
+        
+        <div class="chat-container">
+            {% for message in messages %}
+            <div class="message {{ 'user' if message['sender'] == 'user' else 'bot' }}">
+                <div class="avatar">
+                    <i class="fas {{ 'fa-user' if message['sender'] == 'user' else 'fa-robot' }}"></i>
+                </div>
+                <div>
+                    <div class="message-content">
+                        {{ message['content'] }}
+                    </div>
+                    <div class="message-time">
+                        {{ message['timestamp'] }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
