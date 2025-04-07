@@ -1,12 +1,14 @@
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import os
 import logging
 import json
 import time
 from typing import Optional
+from pathlib import Path
 from .knowledge_handler import KnowledgeHandler
 from .langchain_handler import LangChainHandler
-from pathlib import Path
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -14,14 +16,26 @@ logger = logging.getLogger(__name__)
 
 class OllamaHandler:
     def __init__(self):
-        # Default to local Ollama instance
+        # Create session with retry strategy
+        self.session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[502, 503, 504],
+            allowed_methods=["POST"]
+        )
+        self.session.mount('http://', HTTPAdapter(max_retries=retries))
+        
+        # Initialize other attributes
         self.api_url = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/chat")
         self.model = "vicuna:7b"  # Specify the model you're using
+        kb_path = Path(__file__).parent.parent / "knowledge_base" / "company_data.json"
+        self.langchain_handler = LangChainHandler(kb_path)
         self.knowledge_handler = KnowledgeHandler()
-        self.system_prompt = """I am Bito, a professional assistant from BITLogix. My primary goals are:
+        self.system_prompt = """I am Bito, a professional assistant from Bitlogicx. My primary goals are:
         1. Introduce myself to new users
         2. Collect customer information (name, email, service interest)
-        3. Provide accurate information about BITLogix products and services
+        3. Provide accurate information about Bitlogicx products and services
         4. Stay focused on company-related topics
         5. Help schedule consultations
 
@@ -44,8 +58,6 @@ class OllamaHandler:
         }
         self.conversation_history = []
         self.last_context = None
-        kb_path = Path(__file__).parent.parent / "knowledge_base" / "company_data.json"
-        self.langchain_handler = LangChainHandler(kb_path)
         logger.debug(f"Initialized OllamaHandler with API URL: {self.api_url} and rate limit: {self.requests_per_hour} requests per hour")
 
     def _check_rate_limit(self) -> bool:
@@ -61,81 +73,82 @@ class OllamaHandler:
         """Update the request timestamps"""
         self.request_timestamps.append(time.time())
 
-    def send_query_to_ollama(self, query: str, context: str) -> Optional[str]:
-        """
-        Sends a query to the Ollama API and returns the response.
-        """
-        if not self._check_rate_limit():
-            wait_time = self.window_size - (time.time() - self.request_timestamps[0])
-            logger.warning(f"Rate limit exceeded. Please wait {int(wait_time/60)} minutes.")
-            return "I'm currently handling too many requests. Please try again in a few minutes."
-
-        messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "system", "content": f"Context: {context}"} if context else {"role": "system", "content": "No specific context available."},
-            {"role": "user", "content": query}
-        ]
-        
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "stream": True  # Enable streaming
-        }
-
-        logger.debug(f"Sending request to Ollama API with payload: {payload}")
-
+    def send_query_to_ollama(self, query: str, context: str, timeout: tuple = (5, 30)) -> Optional[str]:
+        """Sends a query to the Ollama API with improved error handling"""
         try:
-            with requests.post(self.api_url, json=payload, stream=True) as response:
-                logger.debug(f"Response status code: {response.status_code}")
-                
-                if response.status_code == 200:
-                    self._update_rate_limit()  # Only count successful requests
-                    full_response = ""
-                    for line in response.iter_lines():
-                        if line:
-                            try:
-                                json_response = json.loads(line)
-                                if 'message' in json_response:
-                                    content = json_response['message'].get('content', '')
-                                    if content:
-                                        full_response += content
-                                        logger.debug(f"Received content: {content}")
-                            except json.JSONDecodeError as e:
-                                logger.error(f"JSON decode error: {str(e)}")
-                                continue
-                    
-                    return full_response or "No response content"
-                elif response.status_code == 429:  # Too Many Requests
-                    logger.warning("Rate limit exceeded on API side")
-                    return "The service is currently busy. Please try again in a few minutes."
-                else:
-                    logger.error(f"API request failed with status code: {response.status_code}")
-                    return f"Error: API request failed with status code {response.status_code}"
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "system", "content": f"Context: {context}"} if context else {"role": "system", "content": "No specific context available."},
+                    {"role": "user", "content": query}
+                ],
+                "stream": False  # Disable streaming for better error handling
+            }
 
-        except requests.exceptions.ConnectionError as e:
-            logger.error(f"Connection error: {str(e)}")
-            return "Error: Could not connect to Ollama API. Make sure Ollama is running locally."
+            response = self.session.post(
+                self.api_url,
+                json=payload,
+                timeout=timeout
+            )
+            
+            response.raise_for_status()
+            return response.json().get('message', {}).get('content', '')
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request failed: {str(e)}")
+            if isinstance(e, requests.exceptions.ConnectionError):
+                return "Error: Could not connect to Ollama API. Please ensure the service is running."
+            elif isinstance(e, requests.exceptions.Timeout):
+                return "Error: The request timed out. Please try again."
+            return "Error: Failed to process your request. Please try again."
+            
         except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}")
-            return f"Error: {str(e)}"
+            logger.error(f"Unexpected error in send_query_to_ollama: {str(e)}")
+            return None
+
+    async def reset_conversation(self):
+        """Reset both Ollama and LangChain conversation states"""
+        try:
+            # Reset LangChain conversation
+            response = await self.langchain_handler.reset_conversation()
+            
+            # Reset local state
+            self.conversation_history = []
+            self.last_context = None
+            
+            logger.debug("Chat session reset successfully")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error resetting conversation: {e}")
+            return "I've reset our conversation. How can I help you today?"
 
     async def get_response(self, user_input: str) -> str:
-        """Process user input with LangChain integration"""
-        logger.debug(f"Processing user input: {user_input}")
-
-        # Handle initial greeting
-        if user_input == "START_CHAT" and not self.conversation_state["initialized"]:
-            self.conversation_state["initialized"] = True
-            return self.knowledge_handler.get_greeting()
-
-        # Get response using LangChain
-        response = await self.langchain_handler.get_response(user_input)
-
-        # Check for business intent and enhance response if needed
-        if self._detect_business_intent(user_input):
-            response = self._enhance_business_response(response, user_input)
-
-        return response
+        try:
+            # Add timeout for API calls
+            timeout = (5, 30)  # (connect timeout, read timeout)
+            
+            # First try LangChain handler
+            try:
+                return await self.langchain_handler.get_response(user_input)
+            except Exception as e:
+                logger.warning(f"LangChain handler failed: {e}, falling back to direct Ollama API")
+                
+                # Fallback to direct Ollama API
+                response = self.send_query_to_ollama(user_input, "", timeout=timeout)
+                if response:
+                    return response
+                
+                raise Exception("Both handlers failed to generate response")
+                
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            logger.error(f"Connection error with Ollama API: {e}")
+            return "I apologize, but I'm having trouble connecting to my language model. Please try again in a moment."
+            
+        except Exception as e:
+            logger.error(f"Unexpected error in get_response: {e}")
+            return "I apologize, but I encountered an error. Please try again or rephrase your question."
 
     def _enhance_business_response(self, initial_response: str, user_input: str) -> str:
         # Add business-specific information to the response

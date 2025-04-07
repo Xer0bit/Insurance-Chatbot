@@ -1,10 +1,10 @@
 {
     "company": {
-        "name": "BITLogix",
+        "name": "Bitlogicx",
         "website": "https://bitlogicx.com/",
         "location": "A5 Commercial Block A, Architects Engineers Housing Society, Lahore, Pakistan",
         "contact_email": "contact@bitlogicx.com",
-        "description": "BITLogix is a dedicated team of professionals delivering exceptional software services and innovative solutions to drive business success.",
+        "description": "Bitlogicx is a dedicated team of professionals delivering exceptional software services and innovative solutions to drive business success.",
         "social_media": ["Facebook", "Twitter", "LinkedIn", "Instagram"],
         "sections": [
             "Home", "Services", "Products", "Projects", "About Us", 
@@ -17,7 +17,7 @@
     },
     "products": [
         {
-            "name": "BIT ERP",
+            "name": "Bitlogicx ERP",
             "description": "Empowers businesses to manage employee data and streamline processes with Slack integration for enhanced communication.",
             "use_case": "Business management and team collaboration"
         },
@@ -167,7 +167,7 @@
     },
     "response_templates": {
         "greeting": "Hi! I'm Bito, how can I help you today?",
-        "company_intro": "We're BITLogix, a software company in Lahore creating innovative solutions for business success.",
+        "company_intro": "We're Bitlogicx, a software company in Lahore creating innovative solutions for business success.",
         "contact": "You can email us at {contact_email} or visit us at {location}.",
         "product_info": "{product_name}: {description}",
         "response_styles": {

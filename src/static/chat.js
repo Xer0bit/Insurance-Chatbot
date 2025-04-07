@@ -11,16 +11,29 @@ function addMessage(message, isUser) {
         '/static/images/bot-avatar.png';
     avatar.alt = isUser ? 'User' : 'Bito';
 
-    // Create message content
+    // Create message content with markdown support
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
-    contentDiv.textContent = message;
-
-    // Add timestamp
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'message-time';
-    timeDiv.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    contentDiv.appendChild(timeDiv);
+    
+    if (!isUser) {
+        // Add loading state
+        contentDiv.innerHTML = '<div class="loading">...</div>';
+        renderMarkdown(message).then(html => {
+            contentDiv.innerHTML = html;
+            // Add timestamp after content is rendered
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            contentDiv.appendChild(timeDiv);
+        });
+    } else {
+        contentDiv.textContent = message;
+        // Add timestamp for user messages
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        contentDiv.appendChild(timeDiv);
+    }
 
     // Assemble message
     messageDiv.appendChild(avatar);
@@ -29,14 +42,59 @@ function addMessage(message, isUser) {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
+async function renderMarkdown(text) {
+    try {
+        // Configure marked options
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: false,
+            mangle: false,
+            smartLists: true,
+            smartypants: true
+        });
+        
+        // Clean up the text before parsing
+        text = text.replace(/\*\*/g, '**').trim();  // Fix double asterisks
+        text = text.replace(/\n\s*\n\s*\n/g, '\n\n');  // Fix multiple line breaks
+        
+        // Parse markdown and sanitize
+        const html = await marked.parse(text);
+        return DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'strong', 'em', 'ul', 'ol', 'li', 'p', 'br', 'code', 'pre']
+        });
+    } catch (error) {
+        console.error('Error parsing markdown:', error);
+        return text;
+    }
+}
+
 function showTypingIndicator() {
-    const indicator = document.getElementById('typing-indicator');
-    indicator.style.display = 'block';
-    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+    const messagesDiv = document.getElementById('chat-messages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message bot-message typing-indicator';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = `
+        <img src="/static/images/bot-avatar.png" class="avatar" alt="Bito">
+        <div class="message-content">
+            <div class="thinking-animation">
+                <div class="thinking-dots">
+                    <div class="dot dot1"></div>
+                    <div class="dot dot2"></div>
+                    <div class="dot dot3"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    messagesDiv.appendChild(typingDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 function hideTypingIndicator() {
-    document.getElementById('typing-indicator').style.display = 'none';
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
 }
 
 // Add initialization function
@@ -162,3 +220,33 @@ document.getElementById('user-input').addEventListener('keypress', function(e) {
         sendMessage();
     }
 });
+
+async function resetChat() {
+    try {
+        // Clear chat messages
+        const messagesDiv = document.getElementById('chat-messages');
+        messagesDiv.innerHTML = '';
+        
+        // Reset conversation on server
+        const response = await fetch('/reset-chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const data = await response.json();
+        addMessage(data.response, false);
+        
+    } catch (error) {
+        console.error('Error resetting chat:', error);
+        addMessage('Error resetting chat. Please try again.', false);
+    }
+}
+
+function handleKeyPress(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessage();
+    }
+}

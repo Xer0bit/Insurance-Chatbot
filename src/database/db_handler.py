@@ -1,44 +1,76 @@
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from .models import Base, CompanyInfo, ContactForm
 from config.settings import DATABASE_URI
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DatabaseHandler:
     def __init__(self):
-        self.engine = create_engine(DATABASE_URI)
-        Base.metadata.create_all(self.engine)
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        # Convert SQLite URI to async
+        self.engine = create_async_engine(
+            DATABASE_URI.replace('sqlite:///', 'sqlite+aiosqlite:///')
+        )
+        self.async_session = sessionmaker(
+            self.engine, class_=AsyncSession, expire_on_commit=False
+        )
 
-    def get_company_info(self):
-        company = self.session.query(CompanyInfo).first()
-        if company:
-            return {
-                'name': company.name,
-                'description': company.description,
-                'contact_info': company.contact_info
-            }
-        return {'error': 'Company information not found'}
+    async def initialize(self):
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
-    def save_contact_form(self, contact_data):
-        try:
-            contact_form = ContactForm(
-                name=contact_data['name'],
-                email=contact_data['email'],
-                phone=contact_data['phone'],
-                message=contact_data['message'],
-                submission_date=datetime.utcnow()
-            )
-            self.session.add(contact_form)
-            self.session.commit()
-            return True, "Contact information saved successfully"
-        except Exception as e:
-            self.session.rollback()
-            return False, str(e)
+    async def save_contact_form(self, contact_data):
+        async with self.async_session() as session:
+            try:
+                contact_form = ContactForm(
+                    name=contact_data['name'],
+                    email=contact_data['email'],
+                    phone=contact_data['phone'],
+                    message=contact_data.get('message', ''),
+                    submission_date=datetime.utcnow(),
+                    status='new'
+                )
+                
+                session.add(contact_form)
+                await session.commit()
+                
+                logger.info(f"Contact form saved for {contact_data['email']}")
+                return True, "Contact information saved successfully"
+                
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Error saving contact form: {str(e)}")
+                return False, str(e)
 
-    def get_contact_forms(self, status='new'):
-        return self.session.query(ContactForm).filter_by(status=status).all()
+    async def get_contact_forms(self, status=None):
+        """Get all contact forms with optional status filter"""
+        async with self.async_session() as session:
+            try:
+                query = select(ContactForm)
+                if status:
+                    query = query.filter(ContactForm.status == status)
+                query = query.order_by(ContactForm.submission_date.desc())
+                
+                result = await session.execute(query)
+                return result.scalars().all()
+            except Exception as e:
+                logger.error(f"Error fetching contact forms: {e}")
+                return []
+
+    async def update_lead_status(self, lead_id: int, status: str):
+        """Update lead status"""
+        async with self.async_session() as session:
+            try:
+                lead = await session.get(ContactForm, lead_id)
+                if lead:
+                    lead.status = status
+                    await session.commit()
+                    return True
+            except Exception as e:
+                logger.error(f"Error updating lead status: {e}")
+                return False
 
 def connect_to_db():
     import sqlite3

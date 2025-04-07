@@ -11,6 +11,13 @@ class KnowledgeHandler:
         self.templates = self.knowledge_base.get("response_templates", {})
         self.last_context = None
         self.context_count = {}
+        self.lead_collection_state = {
+            "collecting": False,
+            "name": None,
+            "email": None,
+            "phone": None,
+            "project_type": None
+        }
 
     def _load_knowledge_base(self):
         try:
@@ -22,10 +29,63 @@ class KnowledgeHandler:
             return {}
 
     def get_context(self, query: str) -> str:
-        """Enhanced context matching focused on lead generation"""
+        """Enhanced context matching with sales focus"""
+        # First check if we're collecting lead information
+        if self.lead_collection_state["collecting"]:
+            return self._handle_lead_collection(query)
+
+        # First check if it's an initial greeting
+        greeting_words = ['hi', 'hello', 'hey', 'greetings']
+        if any(word == query.lower().strip() for word in greeting_words):
+            return self.get_greeting()
+            
+        # Check for service-related queries
+        if any(service in query.lower() for service in ['development', 'integration', 'automation', 'consulting']):
+            services = self.knowledge_base['services']
+            return f"We specialize in {services['general']}. Our key services include {', '.join(services['specific'])}. Would you like to know more about any specific service?"
+            
+        # Handle AI/chatbot specific queries
+        if any(term in query.lower() for term in ['ai', 'chatbot', 'bot']):
+            return """We offer comprehensive AI and chatbot solutions including:
+• Custom AI-powered chatbots
+• Natural Language Processing integration
+• Business workflow automation
+• Multi-platform deployment
+
+Would you like to discuss your specific requirements?"""
+        
+        # Check for development process queries
+        if any(term in query.lower() for term in ['process', 'approach', 'methodology']):
+            process = self.knowledge_base['custom_solutions']['development_process']
+            return f"Our development process includes: {', '.join(process)}"
+            
+        # Then check for location and other queries
+        if 'location' in query.lower() or 'where' in query.lower():
+            return f"Bitlogicx is located at {self.knowledge_base['company']['location']}"
+        
         if self._shows_interest(query):
             return self._get_sales_context(query)
-        return super().get_context(query)
+
+        # Check for project interest keywords
+        project_keywords = ['app', 'application', 'mobile', 'website', 'software', 'system']
+        if any(keyword in query.lower() for keyword in project_keywords):
+            self.lead_collection_state["collecting"] = True
+            self.lead_collection_state["project_type"] = next((k for k in project_keywords if k in query.lower()), None)
+            return """Great! We specialize in building custom mobile applications. To better understand your requirements and provide you with detailed information, could you please share:
+
+1. Your name
+2. Email address
+3. Phone number
+4. Brief description of your project
+
+Please start by telling me your name."""
+
+        return self._get_general_context(query)
+
+    def _get_general_context(self, query: str) -> str:
+        """Get general context for basic queries"""
+        if any(word in query.lower() for word in ['where', 'located', 'address', 'place']):
+            return f"We are located at {self.knowledge_base['company']['location']}. Would you like to schedule a visit or discuss your requirements?"
 
     def _is_business_query(self, query: str) -> bool:
         business_keywords = ['cost', 'price', 'quote', 'service', 'develop', 'build', 'create']
@@ -93,13 +153,8 @@ class KnowledgeHandler:
         return [services["general"]] + services["specific"]
 
     def get_greeting(self) -> str:
-        """Get initial greeting message"""
-        return """Hello! I'm Bito, BITLogix's AI assistant. We specialize in custom software solutions for businesses.
-
-How may I help you today? I can:
-1. Discuss our software products and services
-2. Share information about our development expertise
-3. Help schedule a consultation with our team"""
+        """Get initial greeting message with a professional tone"""
+        return "Hello! I'm Bito, your AI assistant from Bitlogicx. How can I help you today?"
 
     def _get_lead_collection_state(self, query: str) -> dict:
         """Track lead collection progress"""
@@ -121,10 +176,15 @@ How may I help you today? I can:
         return any(signal in query.lower() for signal in interest_signals)
 
     def _get_sales_context(self, query: str) -> str:
-        """Get sales-focused context"""
+        """Get sales-focused context prioritizing services"""
         context = []
         
-        # Add relevant product/service info
+        # Lead with services
+        if any(service in query.lower() for service in ['software', 'development', 'solution']):
+            context.append(self.knowledge_base['custom_solutions']['description'])
+            context.append("Our process includes requirements analysis, design, development, testing, deployment, and ongoing support.")
+        
+        # Add specific service context
         if 'app' in query.lower() or 'mobile' in query.lower():
             context.append("We specialize in mobile app development using React Native.")
         elif 'web' in query.lower() or 'website' in query.lower():
@@ -134,6 +194,49 @@ How may I help you today? I can:
         context.append("To provide you with accurate information and pricing, we'd love to learn more about your project requirements.")
         
         return " ".join(context)
+
+    def _handle_lead_collection(self, query: str) -> str:
+        """Handle lead collection flow"""
+        state = self.lead_collection_state
+        
+        if not state["name"]:
+            state["name"] = query
+            return f"Nice to meet you {query}! Could you please share your email address?"
+            
+        if not state["email"]:
+            if self.validate_email(query):
+                state["email"] = query
+                return "Perfect! What's the best phone number to reach you at?"
+            return "Please provide a valid email address so our team can contact you."
+            
+        if not state["phone"]:
+            if self._validate_phone(query):
+                state["phone"] = query
+                # Save lead to database
+                self._save_lead()
+                return f"""Thank you for providing your information! Our team will contact you shortly to discuss your {state['project_type']} project.
+                
+In the meantime, would you like to know more about our development process or previous similar projects?"""
+            return "Please provide a valid phone number."
+            
+        return self._get_sales_context(query)
+
+    def _save_lead(self) -> None:
+        """Save lead information to database"""
+        from database.db_handler import DatabaseHandler
+        db = DatabaseHandler()
+        db.save_contact_form({
+            "name": self.lead_collection_state["name"],
+            "email": self.lead_collection_state["email"],
+            "phone": self.lead_collection_state["phone"],
+            "message": f"Interested in {self.lead_collection_state['project_type']} development"
+        })
+        
+    def _validate_phone(self, phone: str) -> bool:
+        """Validate phone number"""
+        import re
+        pattern = r'[\d\+\-\(\) ]{10,}'
+        return bool(re.match(pattern, phone))
 
     def validate_email(self, email: str) -> bool:
         """Basic email validation"""

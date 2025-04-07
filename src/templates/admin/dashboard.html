@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - Bitlogicx</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin/style.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h2>Admin Dashboard</h2>
+            <a href="{{ url_for('admin.logout') }}" class="logout-btn">Logout</a>
+        </header>
+        
+        <div class="leads-container">
+            <h3>Recent Leads</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Project Type</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads %}
+                    <tr>
+                        <td>{{ lead.name }}</td>
+                        <td>{{ lead.email }}</td>
+                        <td>{{ lead.phone }}</td>
+                        <td>{{ lead.message }}</td>
+                        <td>{{ lead.submission_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ lead.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
